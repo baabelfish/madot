@@ -1,6 +1,6 @@
-(ns madot.core)
+(ns madot.core
+  (:require [quil.core :as q]))
 
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
+(defn -main
+  []
+  (println "Hello, World!"))
