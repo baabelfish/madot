@@ -1,6 +1,6 @@
 (ns madot.core)
 
-(defn -main
-  "Launch the clash of madot!"
-  []
-  (println "Hello, World!"))
+(defn foo
+  "I don't do a whole lot."
+  [x]
+  (println x "Hello, World!"))

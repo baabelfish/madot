@@ -1,6 +1,6 @@
-(ns matomähinä.core-test
+(ns madot.core-test
   (:require [clojure.test :refer :all]
-            [matomähinä.core :refer :all]))
+            [madot.core :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."
