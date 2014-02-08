@@ -1,10 +1,20 @@
 # madot
 
-A Clojure library designed to ... well, that part is up to you.
+Multiplayer AI-challenge on top of clojure and snakes.
 
 ## Usage
 
-FIXME
+### Running
+```
+lein run
+```
+
+### Creating an AI
+1. Make an AI into file `src/ai/<NAME>.clj`
+2. Add the AI to `src/ai/index.clj`
+   - Merge it to `:require` like so: `(:require [ai.turtle :as turtle] [ai.<NAME> :as <NAME>])`
+   - Add it to the array that ai-index function returns in the same file
+3. Run it
 
 ## License
 
