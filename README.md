@@ -6,7 +6,7 @@ Multiplayer AI-challenge on top of clojure and snakes.
 
 ### Running
 ```
-lein run
+$ lein run
 ```
 
 ### Creating an AI
