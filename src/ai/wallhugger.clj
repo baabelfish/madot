@@ -22,8 +22,8 @@
         down (sumvec head :down)
         left (sumvec head :left)
         right (sumvec head :right)]
-    (if (look up) :up
-      (if (look left) :left
+    (if (look left) :left
+      (if (look up) :up
         (if (look down) :down
           :right)))))
 
