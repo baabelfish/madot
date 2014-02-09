@@ -1,16 +1,17 @@
 (ns madot.drawing
   (:require [quil.core :refer :all]))
 
-(def gconfig {:fps 2
-              :info-offset 40
-              :right-offset 160
-              :size 10
-              :title "matopeli"
-              :background 20})
+(def c-fps 2)
+(def c-info-offset 40)
+(def c-right-offset 160)
+(def c-size 10)
+(def c-title "matopeli")
+(def c-background 20)
 
 (defn setup []
-  (frame-rate (:fps gconfig))
-  (smooth))
+  (frame-rate c-fps)
+  (smooth)
+  (background c-background))
 
 (defn stroke-setup
   "Sets all the relevant stroke related attributes."
@@ -24,39 +25,37 @@
 
 (defn draw-circle ([[x y] color]
   (fill-setup color)
-  (let [size (:size gconfig)
-        off (/ size 2)
-        sx (* x size)
-        sy (+ (:info-offset gconfig) (* y size))]
+  (let [off (/ c-size 2)
+        sx (* x c-size)
+        sy (+ c-info-offset (* y c-size))]
     (ellipse (+ sx off) (+ sy off) off off))))
 
 (defn draw-rect
   ([[x y] color]
   (fill-setup color)
-  (let [size (:size gconfig)
-        sx (* x size)
-        sy (+ (:info-offset gconfig) (* y size))]
-    (rect sx sy size size))))
+  (let [sx (* x c-size)
+        sy (+ c-info-offset (* y c-size))]
+    (rect sx sy c-size c-size))))
 
 (defn draw-grid [gx gy]
   (stroke-setup 40 1)
-  (let [height (* (:size gconfig) gy)
-        width  (* (:size gconfig) gx)
-        offset (:info-offset gconfig)]
+  (let [height (* c-size gy)
+        width  (* c-size gx)
+        offset c-info-offset]
     (doseq [i (range 0 gx)]
-      (let [x (* (:size gconfig) i)]
+      (let [x (* c-size i)]
         (line x offset x (+ offset height))))
     (doseq [i (range 0 gy)]
-      (let [y (+ offset (* (:size gconfig) i))]
+      (let [y (+ offset (* c-size i))]
         (line 0 y width y)))
     (line width 0 width (+ height offset))))
 
 (defn draw-texts [gx gy ai-list round-number]
   (fill 255)
-  (let [width  (* (:size gconfig) gx)
-        height (* (:size gconfig) gy)
-        offset (:info-offset gconfig)
-        roffset (:right-offset gconfig)]
+  (let [width  (* c-size gx)
+        height (* c-size gy)
+        offset c-info-offset
+        roffset c-right-offset]
     (text-align :center :bottom)
     (text-size 20)
     (fill 0 255 0)
@@ -91,8 +90,18 @@
 
 (defn draw-game
   [gx gy ai-list round-number food]
-  (background (:background gconfig))
+  (background c-background)
   (draw-grid gx gy)
   (draw-texts gx gy ai-list round-number)
   (draw-ai ai-list)
   (draw-food food))
+
+(defn get-sketch
+  [gx gy game]
+  (let [sizex (* c-size gx)
+        sizey (* c-size gy)]
+    (sketch
+      :title c-title
+      :setup setup
+      :draw game
+      :size [(+ sizex c-right-offset) (+ sizey c-info-offset)])))

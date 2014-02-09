@@ -1,112 +1,92 @@
 (ns madot.core
   (:require [quil.core :refer :all]
             [ai.index :as index]
+            [madot.helpers :refer :all]
             [madot.drawing :refer :all]))
 
-(def config {:x 40
-             :y 40
-             :food-density 10})
-
-(def options #{:left
-               :right
-               :up
-               :down})
-
+(def grid-x 40)
+(def grid-y 40)
 (def directions {:left [-1 0]
                  :right [1 0]
                  :up [0 -1]
                  :down [0 1]})
 
-(defn in?
-  [se elem]
-  (some #(= elem %) se))
-
-(defn vecoper
-  [[x y] [dx dy] f]
-  [(f dx x) (f dy y)])
-
-(defn- between?
-  "Checks if a value is between a and b"
-  [value a b]
-  (and (>= value a) (< value b)))
-
-(defn- random-tile
-  []
-  [(int (rand (dec (:x config))))
-   (int (rand (dec (:y config))))])
-
-(defn- on-grid?
-  "Checks if the given position is on grid."
-  [[x y]]
-  (let [sizex (:x config)
-        sizey (:y config)]
-    (and (between? x 0 sizex) (between? y 0 sizey))))
-
-(def ai-list (zipmap
-               (map inc (range))
-               (->> (index/ai-index)
-                    (map #(merge % {:blocks (atom (conj '() (random-tile)))
-                                    :size (atom 2)
-                                    :is-alive (atom true)})))))
-
+(def food-density (atom 10))
 (def round-number (atom 0))
 (def nonpassable (atom []))
 (def food (atom #{}))
+(def ai-list (zipmap
+               (map inc (range))
+               (->> (index/ai-index)
+                    (map #(merge % {:blocks (atom (conj '() (random-point grid-x grid-y)))
+                                    :size (atom 2)
+                                    :is-alive (atom true)})))))
+
+(defn ai-func
+  [ai func]
+  (let [blocks (:blocks ai)
+        exec (:exec ai)
+        head (first @blocks)
+        allowed-size (:size ai)
+        current-size (count @blocks)]
+      (func ai allowed-size current-size head blocks exec)))
+
+(defn for-ai
+  "Runs a function to all AIs. If for-all is true, it will run the function for dead worms too."
+  ([func for-all]
+  (doseq [ai (vals ai-list)]
+    (when (or for-all @(:is-alive ai))
+      (ai-func ai func))))
+  ([func] (for-ai func false)))
 
 (defn- kill-ai
   ([ai]
    (swap! (:is-alive ai) (fn [x] false)))
-  ([ai1 ai2]
+  ([ai1 & other]
    (kill-ai ai1)
-   (kill-ai ai2)))
+   (kill-ai other)))
 
 (defn- check-collisions []
   (doseq [ai (vals ai-list)
           aic (vals ai-list)]
-    (when (and (true? @(:is-alive ai)) (true? @(:is-alive ai)))
+    (when (and @(:is-alive ai) @(:is-alive ai))
       (let [aib @(:blocks ai)
             aicb @(:blocks aic)]
         (if (and (not= ai aic) (= (first aib) (first aicb)))
           (kill-ai ai aic)
           (when (or (in? (rest aicb) (first aib))
-                    (not (on-grid? (first aib))))
+                    (not (on-grid? (first aib) [grid-x grid-y])))
             (kill-ai ai)))))))
 
-(defn- pickup-food []
-  (doseq [ai (vals ai-list)]
-    (let [head (first @(:blocks ai))]
-      (when (contains? @food head)
-        (swap! (:size ai) inc)
-        (swap! food #(disj % head))))))
+(defn- update-food
+  "Updates food in game"
+  []
+  (for-ai (fn [ai as cs head blocks exec]
+            (when (contains? @food head)
+              (swap! as inc)
+              (swap! food #(disj % head)))) false)
+  (when (zero? (mod @round-number @food-density))
+    (swap! food #(conj % (random-point grid-x grid-y)))))
 
-(defn- run-ai []
-  (swap! round-number inc)
-  (when (zero? (mod @round-number (:food-density config)))
-    (swap! food #(conj % (random-tile))))
-  (pickup-food)
-  (doseq [ai (vals ai-list)]
-    (when (true? @(:is-alive ai))
-      (let [move ((:exec ai))]
-        (if (contains? options move)
-          (let [blocks (:blocks ai)
-                size @(:size ai)
-                newpos (vecoper (first @blocks) (move directions) +)]
-            (swap! blocks #(conj % newpos))
-            (when (> (count @blocks) size)
-              (swap! blocks butlast)))
-          (kill-ai ai)))))
+(defn- update-ai []
+  (for-ai (fn [ai as cs head blocks exec]
+            (let [move (exec)]
+              (if (contains? (set (keys directions)) move)
+                (let [newpos (vecoper head (move directions) +)]
+                  (swap! blocks #(conj % newpos))
+                  (when (> cs @as)
+                    (swap! blocks butlast)))
+                (kill-ai ai)))))
   (check-collisions))
 
-(defn- game []
-  (draw-game (:x config) (:y config) ai-list @round-number @food)
-  (run-ai))
+(defn- game
+  "Basic game-loop with drawing and updating."
+  []
+  (swap! round-number inc)
+  (update-food)
+  (draw-game grid-x grid-y ai-list @round-number @food)
+  (update-ai))
 
 (defn -main []
-  (let [sizex (* (:size gconfig) (:x config))
-        sizey (* (:size gconfig) (:y config))]
-    (sketch
-      :title (:title gconfig)
-      :setup setup
-      :draw game
-      :size [(+ sizex (:right-offset gconfig)) (+ sizey (:info-offset gconfig))]))
+  (get-sketch grid-x grid-y game)
   (println "Matomähinä käynnis!"))
