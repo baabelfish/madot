@@ -12,13 +12,13 @@ $ lein run
 ### Creating an AI
 1. Make an AI into file `src/ai/<NAME>.clj`
 2. Add the AI to `src/ai/index.clj`
-   - Add it to the array that ai-index function returns as `ai.<NAME>/init`
+   - Merge it to `:require` like so: `(:require [ai.wallhugger :as wallhugger] [ai.<NAME> :as <NAME>])`
+   - Add it to the array that ai-index function returns as `ai.<NAME>/init` e.g. `[ai.wallhugger/init ai.<NAME>/init]`
 3. Run it
 
 ### Rules
-You are only allowed to modify your own AI-file and adding the init to the
-index. On top of that only information you are allowed to use, must come from
-`src/ai/common.clj`.
+You are only allowed to use the data `exec`-function is provided with and the
+`madot.helpers`-namespace.
 
 ## License
 
