@@ -6,7 +6,7 @@
 
 (def grid-x 40)
 (def grid-y 40)
-(def starting-length 10)
+(def starting-length 20)
 
 (def food-density (atom 1))
 (def round-number (atom 0))

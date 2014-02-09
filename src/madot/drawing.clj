@@ -73,7 +73,10 @@
             (fill-setup color)
             (rect (+ 2 width) (+ 2 (* 12 (dec index))) 8 8))
           (fill 255)
-          (text (str (:name ai) " (" index ")") (+ width 12) (* 12 (dec index)))
+          (text-align :left :top)
+          (text (str (:name ai)) (+ width 12) (* 12 (dec index)))
+          (text-align :right :top)
+          (text (str @(:size ai)) (+ width roffset) (* 12 (dec index)))
           (recur (inc index)))))))
 
 (defn- draw-ai
