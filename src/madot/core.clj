@@ -116,7 +116,7 @@
 (defn- game-ended?
   "Checks if game has ended."
   []
-  (every? #((:is-alive %)) (vals @ai-list)))
+  (every? #(false? @(:is-alive %)) (vals @ai-list)))
 
 (defn- game
   "Basic game-loop with drawing and updating."
