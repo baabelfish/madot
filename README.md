@@ -2,7 +2,7 @@
 
 Multiplayer AI-challenge on top of clojure and snakes.
 
-![Wizard vs Wallhugger](https://github.com/baabelfish/madot/doc/madot.png)
+![Wizard vs Wallhugger](https://raw.github.com/baabelfish/madot/master/doc/madot.png)
 
 ## Usage
 
