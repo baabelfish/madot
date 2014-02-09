@@ -3,5 +3,5 @@
             [ai.wizard :as wizard]))
 
 (defn ai-index []
-  [turtle/init]
-  [wizard/init])
+  [turtle/init
+  wizard/init])
