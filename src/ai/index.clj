@@ -1,4 +1,6 @@
-(ns ai.index)
+(ns ai.index
+  (:require [ai.wallhugger :as wh]
+            [ai.wizard :as wizard]))
 
 (defn ai-index []
-  [ai.wallhugger/init ai.wizard/init])
+  [wh/init wizard/init])

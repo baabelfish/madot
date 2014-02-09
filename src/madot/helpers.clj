@@ -1,5 +1,10 @@
 (ns madot.helpers)
 
+(def directions {:left [-1 0]
+                 :right [1 0]
+                 :up [0 -1]
+                 :down [0 1]})
+
 (defn in?
   ;; FIXME
   "Checks if an element is in a sequence."

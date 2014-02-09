@@ -1,31 +1,31 @@
 (ns ai.wallhugger
-  (:require [ai.common :refer :all]))
+  (:require [madot.helpers :refer :all]))
 
-(defn- debug
-  []
-  (println (get-round-number)
-           (get-food)
-           (get-dimensions)
-           (get-food-density)
-           (get-nonpassable)
-           (get-heads)))
+(defn- sumvec
+  [[x y] dir]
+  (vecoper [x y] (dir directions) +))
 
-;; AI :exec method should return the new direction it's
-;; going at
-(defn- exec [allowed-size current-size head blocks]
-  ;; (println allowed-size current-size head blocks)
-  ;; (debug)
-  (let [up (sum-kw head :up)
-        down (sum-kw head :down)
-        left (sum-kw head :left)
-        right (sum-kw head :right)]
-    (if (is-ok up)
-      :up
-      (if (is-ok right)
-        :right
-        (if (is-ok down)
-          :down
-          :left)))))
+(defn- exec
+  [data]
+  (let [size (:size data)
+        head (:head data)
+        dimensions (:dimensions data)
+        blocks (:blocks data)
+        food-density (:food-density data)
+        round-number (:round-number data)
+        nonpassable (:nonpassable data)
+        food (:food data)
+        wormblocks (:wormblocks data)
+        look (:look data)
+
+        up (sumvec head :up)
+        down (sumvec head :down)
+        left (sumvec head :left)
+        right (sumvec head :right)]
+    (if (look up) :up
+      (if (look left) :left
+        (if (look down) :down
+          :right)))))
 
 (def init {:exec exec
            :name "Wallhugger"

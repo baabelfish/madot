@@ -6,25 +6,37 @@
 
 (def grid-x 40)
 (def grid-y 40)
-(def starting-length 3)
-(def directions {:left [-1 0]
-                 :right [1 0]
-                 :up [0 -1]
-                 :down [0 1]})
+(def starting-length 10)
 
-(def food-density (atom 10))
+(def food-density (atom 1))
 (def round-number (atom 0))
 (def nonpassable (atom #{}))
 (def food (atom #{}))
 (def wormblocks (atom #{}))
-(def ai-list (zipmap
-               (map inc (range))
-               (->> (index/ai-index)
-                    (map #(merge % {:blocks (atom (conj '() (random-point grid-x grid-y)))
-                                    :size (atom starting-length)
-                                    :is-alive (atom true)})))))
 
-(defn ai-func
+(def ai-list (atom {}))
+
+(defn- reset-game
+  []
+  (swap! food-density (fn [x] 5))
+  (swap! round-number (fn [x] 0))
+  (swap! nonpassable (fn [x] #{}))
+  (swap! food (fn [x] #{}))
+  (swap! wormblocks (fn [x] #{}))
+  (swap! ai-list (fn [x]
+                   (zipmap
+                     (map inc (range))
+                     (->> (index/ai-index)
+                          (map #(merge % {:blocks (atom (conj '() (random-point grid-x grid-y)))
+                                          :size (atom starting-length)
+                                          :is-alive (atom true)})))))))
+
+(defn- look [[x y]]
+  (and (not (contains? @nonpassable [x y]))
+       (not (contains? @wormblocks [x y]))
+       (on-grid? [x y] [grid-x grid-y])))
+
+(defn- ai-func
   [ai func]
   (let [blocks (:blocks ai)
         exec (:exec ai)
@@ -36,29 +48,26 @@
 (defn for-ai
   "Runs a function to all AIs. If for-all is true, it will run the function for dead worms too."
   ([func for-all]
-  (doseq [ai (vals ai-list)]
+  (doseq [ai (vals @ai-list)]
     (when (or for-all @(:is-alive ai))
       (ai-func ai func))))
   ([func] (for-ai func false)))
 
 (defn- kill-ai
-  ([ai]
-   (swap! (:is-alive ai) (fn [x] false)))
-  ([ai1 & other]
-   (kill-ai ai1)
-   (kill-ai other)))
+  [ai]
+  (swap! (:is-alive ai) (fn [x] false)))
 
 (defn- check-collisions
-  ;; FIXME: Use collisionmap
+  ;; FIXME: Use wormblocks and nonpassable
   "Check if collisions happen between the worms and kill them."
   []
-  (doseq [ai (vals ai-list)
-          aic (vals ai-list)]
+  (doseq [ai (vals @ai-list)
+          aic (vals @ai-list)]
     (when (and @(:is-alive ai) @(:is-alive ai))
       (let [aib @(:blocks ai)
             aicb @(:blocks aic)]
         (if (and (not= ai aic) (= (first aib) (first aicb)))
-          (kill-ai ai aic)
+          (do (kill-ai ai) (kill-ai aic))
           (when (or (in? (rest aicb) (first aib))
                     (not (on-grid? (first aib) [grid-x grid-y])))
             (kill-ai ai)))))))
@@ -67,7 +76,7 @@
   "Updates food in game"
   []
   (for-ai (fn [ai as cs head blocks exec]
-            (when (and (< cs @as) (contains? @food head))
+            (when (contains? @food head)
               (swap! as inc)
               (swap! food #(disj % head)))) false)
   (when (zero? (mod @round-number @food-density))
@@ -80,9 +89,21 @@
             (doseq [block @blocks]
               (swap! wormblocks #(conj % block))))))
 
-(defn- update-ai []
+(defn- update-ai
+  []
   (for-ai (fn [ai as cs head blocks exec]
-            (let [move (exec @as cs head @blocks)]
+            (let [on-grid-helper (fn [[x y]]
+                               (on-grid? [x y] [grid-x grid-y]))
+                  move (exec {:size @as
+                              :head head
+                              :dimensions [grid-x grid-y]
+                              :blocks @blocks
+                              :food-density @food-density
+                              :round-number @round-number
+                              :nonpassable @nonpassable
+                              :food @food
+                              :wormblocks @wormblocks
+                              :look look})]
               (if (contains? (set (keys directions)) move)
                 (let [newpos (vecoper head (move directions) +)]
                   (swap! blocks #(conj % newpos))
@@ -97,9 +118,11 @@
   []
   (swap! round-number inc)
   (update-food)
-  (draw-game grid-x grid-y ai-list @round-number @food)
+  (draw-game grid-x grid-y @ai-list @round-number @food)
   (update-ai))
 
-(defn -main []
+(defn -main
+  []
   (get-sketch grid-x grid-y game)
+  (reset-game)
   (println "Matomähinä käynnis!"))

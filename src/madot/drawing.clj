@@ -1,7 +1,7 @@
 (ns madot.drawing
   (:require [quil.core :refer :all]))
 
-(def c-fps 2)
+(def c-fps 10)
 (def c-info-offset 40)
 (def c-right-offset 160)
 (def c-size 10)
