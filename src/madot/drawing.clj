@@ -5,7 +5,7 @@
 (def c-info-offset 40)
 (def c-right-offset 160)
 (def c-size 10)
-(def c-title "matopeli")
+(def c-title "float")
 (def c-background 20)
 
 (defn setup []
@@ -80,8 +80,9 @@
   [ai-list]
   (doseq [ai (vals ai-list)
           block @(:blocks ai)]
-    (when (true? @(:is-alive ai))
-      (draw-rect block (:color ai)))))
+    (if (true? @(:is-alive ai))
+      (draw-rect block (:color ai))
+      (draw-rect block {:r 50 :g 50 :b 50}))))
 
 (defn- draw-food
   [food]

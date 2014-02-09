@@ -18,7 +18,7 @@
 
 (defn- reset-game
   []
-  (swap! food-density (fn [x] 5))
+  (swap! food-density (fn [x] 1))
   (swap! round-number (fn [x] 0))
   (swap! nonpassable (fn [x] #{}))
   (swap! food (fn [x] #{}))
@@ -87,7 +87,7 @@
   (swap! wormblocks (fn [x] #{}))
   (for-ai (fn [ai as cs head blocks exec]
             (doseq [block @blocks]
-              (swap! wormblocks #(conj % block))))))
+              (swap! wormblocks #(conj % block)))) true))
 
 (defn- update-ai
   []
