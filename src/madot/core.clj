@@ -113,11 +113,17 @@
   (update-collisionmap)
   (check-collisions))
 
+(defn- game-ended?
+  "Checks if game has ended."
+  []
+  (every? #((:is-alive %)) (vals @ai-list)))
+
 (defn- game
   "Basic game-loop with drawing and updating."
   []
-  (swap! round-number inc)
-  (update-food)
+  (when (not (game-ended?))
+    (swap! round-number inc)
+    (update-food))
   (draw-game grid-x grid-y @ai-list @round-number @food)
   (update-ai))
 
