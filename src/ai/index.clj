@@ -1,5 +1,7 @@
 (ns ai.index
-  (:require [ai.turtle :as turtle]))
+  (:require [ai.turtle :as turtle]
+            [ai.wizard :as wizard]))
 
 (defn ai-index []
-  [turtle/init])
+  [turtle/init]
+  [wizard/init])
