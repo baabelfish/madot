@@ -1,16 +1,11 @@
 (ns madot.core
   (:require [quil.core :refer :all]
-            [ai.index :as index]))
+            [ai.index :as index]
+            [madot.drawing :refer :all]))
 
 (def config {:x 40
              :y 40
-             :food-density 10
-             :fps 2
-             :info-offset 40
-             :right-offset 160
-             :size 10
-             :title "matopeli"
-             :background 20})
+             :food-density 10})
 
 (def options #{:left
                :right
@@ -58,83 +53,6 @@
 (def nonpassable (atom []))
 (def food (atom #{}))
 
-(defn- setup []
-  (frame-rate (:fps config))
-  (smooth))
-
-(defn- stroke-setup
-  "Sets all the relevant stroke related attributes."
-  [color thickness]
-  (stroke color)
-  (stroke-weight thickness))
-
-(defn- fill-setup
-  [color]
-  (fill (:r color) (:g color) (:b color)))
-
-(defn- dgrid []
-  (stroke-setup 40 1)
-  (let [height (* (:size config) (:y config))
-        width  (* (:size config) (:x config))
-        offset (:info-offset config)]
-    (doseq [i (range 0 (:x config))]
-      (let [x (* (:size config) i)]
-        (line x offset x (+ offset height))))
-    (doseq [i (range 0 (:y config))]
-      (let [y (+ offset (* (:size config) i))]
-        (line 0 y width y)))
-    (line width 0 width (+ height offset))))
-
-(defn- dcircle
-  ([[x y] color]
-  (fill-setup color)
-  (let [size (:size config)
-        off (/ size 2)
-        sx (* x size)
-        sy (+ (:info-offset config) (* y size))]
-    (ellipse (+ sx off) (+ sy off) off off))))
-
-(defn- drect
-  ([[x y] color]
-  (fill-setup color)
-  (let [size (:size config)
-        sx (* x size)
-        sy (+ (:info-offset config) (* y size))]
-    (rect sx sy size size))))
-
-(defn- draw-text []
-  (fill 255)
-  (let [width  (* (:size config) (:x config))
-        height (* (:size config) (:y config))
-        offset (:info-offset config)
-        roffset (:right-offset config)]
-    (text-align :center :bottom)
-    (text-size 20)
-    (fill 0 255 0)
-    (text "MATOMÄHINÄ" (+ width (/ roffset 2)) (+ height offset))
-    (text-size 10)
-    (fill 255)
-    (text-size 12)
-    (text-align :left :top)
-    (text (str "Vuoro: " @round-number) 2 0)
-    (loop [index 1]
-      (when (< index (inc (count ai-list)))
-        (let [ai (get ai-list index)
-              color (:color ai)]
-          (when (true? @(:is-alive ai))
-            (fill-setup color)
-            (rect (+ 2 width) (+ 2 (* 12 (dec index))) 8 8))
-          (fill 255)
-          (text (str (:name ai) " (" index ")") (+ width 12) (* 12 (dec index)))
-          (recur (inc index)))))))
-
-(defn- draw-ai
-  []
-  (doseq [ai (vals ai-list)
-          block @(:blocks ai)]
-    (when (true? @(:is-alive ai))
-      (drect block (:color ai)))))
-
 (defn- kill-ai
   ([ai]
    (swap! (:is-alive ai) (fn [x] false)))
@@ -179,24 +97,16 @@
           (kill-ai ai)))))
   (check-collisions))
 
-(defn- draw-food []
-  (doseq [foo @food]
-    (dcircle foo {:r 0 :g 200 :b 0})))
-
 (defn- game []
-  (background (:background config))
-  (dgrid)
-  (draw-text)
-  (draw-food)
-  (draw-ai)
+  (draw-game (:x config) (:y config) ai-list @round-number @food)
   (run-ai))
 
 (defn -main []
-  (let [sizex (* (:size config) (:x config))
-        sizey (* (:size config) (:y config))]
+  (let [sizex (* (:size gconfig) (:x config))
+        sizey (* (:size gconfig) (:y config))]
     (sketch
-      :title (:title config)
+      :title (:title gconfig)
       :setup setup
       :draw game
-      :size [(+ sizex (:right-offset config)) (+ sizey (:info-offset config))]))
+      :size [(+ sizex (:right-offset gconfig)) (+ sizey (:info-offset gconfig))]))
   (println "Matomähinä käynnis!"))
