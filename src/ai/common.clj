@@ -1,5 +1,6 @@
 (ns ai.common
-  (:require [madot.core :as madot]))
+  (:require [madot.core :as madot]
+            [madot.helpers :as helpers]))
 
 (defn get-dimensions
   "Returns the size of the grid."
@@ -32,8 +33,17 @@
   (set (map #(madot/ai-func % (fn [ai as cs head blocks exec] head))
             (vals ai-list))))
 
-(defn is-passabele
-  ;; TODO
+(defn on-grid?
+  [[x y]]
+  (helpers/on-grid? [x y] [madot/grid-x madot/grid-y]))
+
+(defn sum-kw
+  [[x y] kw]
+  (helpers/vecoper [x y] (kw madot/directions) +))
+
+(defn is-ok
   "Returns true if the coordinate is free."
-  [x y]
-  true)
+  [[x y]]
+  (and (not (contains? @madot/nonpassable [x y]))
+       (not (contains? @madot/wormblocks [x y]))
+       (on-grid? [x y])))

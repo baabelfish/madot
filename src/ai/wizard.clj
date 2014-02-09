@@ -1,6 +1,6 @@
 (ns ai.wizard)
 
-(defn- exec []
+(defn- exec [allowed-size current-size head blocks]
   :up)
 
 (def init {:exec exec

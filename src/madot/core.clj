@@ -6,6 +6,7 @@
 
 (def grid-x 40)
 (def grid-y 40)
+(def starting-length 3)
 (def directions {:left [-1 0]
                  :right [1 0]
                  :up [0 -1]
@@ -13,13 +14,14 @@
 
 (def food-density (atom 10))
 (def round-number (atom 0))
-(def nonpassable (atom []))
+(def nonpassable (atom #{}))
 (def food (atom #{}))
+(def wormblocks (atom #{}))
 (def ai-list (zipmap
                (map inc (range))
                (->> (index/ai-index)
                     (map #(merge % {:blocks (atom (conj '() (random-point grid-x grid-y)))
-                                    :size (atom 2)
+                                    :size (atom starting-length)
                                     :is-alive (atom true)})))))
 
 (defn ai-func
@@ -46,7 +48,10 @@
    (kill-ai ai1)
    (kill-ai other)))
 
-(defn- check-collisions []
+(defn- check-collisions
+  ;; FIXME: Use collisionmap
+  "Check if collisions happen between the worms and kill them."
+  []
   (doseq [ai (vals ai-list)
           aic (vals ai-list)]
     (when (and @(:is-alive ai) @(:is-alive ai))
@@ -62,21 +67,29 @@
   "Updates food in game"
   []
   (for-ai (fn [ai as cs head blocks exec]
-            (when (contains? @food head)
+            (when (and (< cs @as) (contains? @food head))
               (swap! as inc)
               (swap! food #(disj % head)))) false)
   (when (zero? (mod @round-number @food-density))
     (swap! food #(conj % (random-point grid-x grid-y)))))
 
+(defn- update-collisionmap
+  []
+  (swap! wormblocks (fn [x] #{}))
+  (for-ai (fn [ai as cs head blocks exec]
+            (doseq [block @blocks]
+              (swap! wormblocks #(conj % block))))))
+
 (defn- update-ai []
   (for-ai (fn [ai as cs head blocks exec]
-            (let [move (exec)]
+            (let [move (exec @as cs head @blocks)]
               (if (contains? (set (keys directions)) move)
                 (let [newpos (vecoper head (move directions) +)]
                   (swap! blocks #(conj % newpos))
-                  (when (> cs @as)
+                  (when (>= cs @as)
                     (swap! blocks butlast)))
                 (kill-ai ai)))))
+  (update-collisionmap)
   (check-collisions))
 
 (defn- game

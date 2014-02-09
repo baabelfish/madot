@@ -1,4 +1,4 @@
 (ns ai.index)
 
 (defn ai-index []
-  [ai.turtle/init ai.wizard/init])
+  [ai.wallhugger/init ai.wizard/init])
