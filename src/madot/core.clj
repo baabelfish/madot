@@ -18,18 +18,17 @@
 
 (defn- reset-game
   []
-  (swap! food-density (fn [x] 1))
-  (swap! round-number (fn [x] 0))
-  (swap! nonpassable (fn [x] #{}))
-  (swap! food (fn [x] #{}))
-  (swap! wormblocks (fn [x] #{}))
-  (swap! ai-list (fn [x]
-                   (zipmap
-                     (map inc (range))
-                     (->> (index/ai-index)
-                          (map #(merge % {:blocks (atom (conj '() (random-point grid-x grid-y)))
-                                          :size (atom starting-length)
-                                          :is-alive (atom true)})))))))
+  (reset! food-density 1)
+  (reset! round-number 0)
+  (reset! nonpassable #{})
+  (reset! food #{})
+  (reset! wormblocks #{})
+  (reset! ai-list (zipmap
+                    (map inc (range))
+                    (->> (index/ai-index)
+                         (map #(merge % {:blocks (atom (conj '() (random-point grid-x grid-y)))
+                                         :size (atom starting-length)
+                                         :is-alive (atom true)}))))))
 
 (defn- look [[x y]]
   (and (not (contains? @nonpassable [x y]))
@@ -55,7 +54,7 @@
 
 (defn- kill-ai
   [ai]
-  (swap! (:is-alive ai) (fn [x] false)))
+  (reset! (:is-alive ai) false))
 
 (defn- check-collisions
   ;; FIXME: Use wormblocks and nonpassable
@@ -84,7 +83,7 @@
 
 (defn- update-collisionmap
   []
-  (swap! wormblocks (fn [x] #{}))
+  (reset! wormblocks #{})
   (for-ai (fn [ai as cs head blocks exec]
             (doseq [block @blocks]
               (swap! wormblocks #(conj % block)))) true))
