@@ -77,7 +77,7 @@
   (for-ai (fn [ai as cs head blocks exec]
             (when (contains? @food head)
               (swap! as inc)
-              (swap! food #(disj % head)))) false)
+              (swap! food #(disj % head)))))
   (when (zero? (mod @round-number @food-density))
     (swap! food #(conj % (random-point grid-x grid-y)))))
 
@@ -92,7 +92,7 @@
   []
   (for-ai (fn [ai as cs head blocks exec]
             (let [on-grid-helper (fn [[x y]]
-                               (on-grid? [x y] [grid-x grid-y]))
+                                   (on-grid? [x y] [grid-x grid-y]))
                   move (exec {:size @as
                               :head head
                               :dimensions [grid-x grid-y]
@@ -105,9 +105,9 @@
                               :look look})]
               (if (contains? (set (keys directions)) move)
                 (let [newpos (vecoper head (move directions) +)]
-                  (swap! blocks #(conj % newpos))
                   (when (>= cs @as)
-                    (swap! blocks butlast)))
+                    (swap! blocks butlast))
+                  (swap! blocks #(conj % newpos)))
                 (kill-ai ai)))))
   (update-collisionmap)
   (check-collisions))
