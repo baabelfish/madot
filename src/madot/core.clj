@@ -60,10 +60,8 @@
 (defn- check-collisions
   "Check if collisions happen between the worms and kill them."
   []
-  (let [deathrow (filter (partial collides? (clojure.set/union @nonpassable @wormblocks)) (vals @ai-list))]
-    (doseq [ai deathrow]
-      (kill-ai ai))))
-
+  (doseq [ai (filter (partial collides? (clojure.set/union @nonpassable @wormblocks)) (vals @ai-list))]
+    (kill-ai ai)))
 
 (defn- update-food
   "Updates food in game"
