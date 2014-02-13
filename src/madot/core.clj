@@ -51,19 +51,16 @@
   [ai]
   (reset! (:is-alive ai) false))
 
-(defn- collides
-  [ai]
-  (let [head (first @(:blocks ai))
-        not-on-grid (not (on-grid? head [grid-x grid-y]))
-        on-wormblocks (contains? @wormblocks head)
-        on-nonpassable (contains? @nonpassable head)]
+(defn- collides?
+  [grid ai]
+  (let [head (first @(:blocks ai))]
     (and (true? @(:is-alive ai))
-         (or not-on-grid on-wormblocks on-nonpassable))))
+         (or (not (on-grid? head [grid-x grid-y])) (contains? grid head)))))
 
 (defn- check-collisions
   "Check if collisions happen between the worms and kill them."
   []
-  (let [deathrow (filter collides (vals @ai-list))]
+  (let [deathrow (filter (partial collides? (clojure.set/union @nonpassable @wormblocks)) (vals @ai-list))]
     (doseq [ai deathrow]
       (kill-ai ai))))
 
