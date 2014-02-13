@@ -30,11 +30,6 @@
                                          :size (atom starting-length)
                                          :is-alive (atom true)}))))))
 
-(defn- look [[x y]]
-  (and (not (contains? @nonpassable [x y]))
-       (not (contains? @wormblocks [x y]))
-       (on-grid? [x y] [grid-x grid-y])))
-
 (defn- ai-func
   [ai func]
   (let [blocks (:blocks ai)
@@ -46,85 +41,90 @@
 
 (defn for-ai
   "Runs a function to all AIs. If for-all is true, it will run the function for dead worms too."
-  ([func for-all]
-  (doseq [ai (vals @ai-list)]
+  ([ailist func for-all]
+  (doseq [ai (vals @ailist)]
     (when (or for-all @(:is-alive ai))
       (ai-func ai func))))
-  ([func] (for-ai func false)))
+  ([ailist func] (for-ai ailist func false)))
 
 (defn- kill-ai
   [ai]
   (reset! (:is-alive ai) false))
 
+(defn- collides
+  [ai]
+  (let [head (first @(:blocks ai))
+        not-on-grid (not (on-grid? head [grid-x grid-y]))
+        on-wormblocks (contains? @wormblocks head)
+        on-nonpassable (contains? @nonpassable head)]
+    (and (true? @(:is-alive ai))
+         (or not-on-grid on-wormblocks on-nonpassable))))
+
 (defn- check-collisions
-  ;; FIXME: Use wormblocks and nonpassable
   "Check if collisions happen between the worms and kill them."
   []
-  (doseq [ai (vals @ai-list)
-          aic (vals @ai-list)]
-    (when (and @(:is-alive ai) @(:is-alive ai))
-      (let [aib @(:blocks ai)
-            aicb @(:blocks aic)]
-        (if (and (not= ai aic) (= (first aib) (first aicb)))
-          (do (kill-ai ai) (kill-ai aic))
-          (when (or (in? (rest aicb) (first aib))
-                    (not (on-grid? (first aib) [grid-x grid-y])))
-            (kill-ai ai)))))))
+  (let [deathrow (filter collides (vals @ai-list))]
+    (doseq [ai deathrow]
+      (kill-ai ai))))
+
 
 (defn- update-food
   "Updates food in game"
   []
-  (for-ai (fn [ai as cs head blocks exec]
-            (when (contains? @food head)
-              (swap! as inc)
-              (swap! food #(disj % head)))))
+  (for-ai ai-list (fn [ai as cs head blocks exec]
+                    (when (contains? @food head)
+                      (swap! as inc)
+                      (swap! food #(disj % head)))))
   (when (zero? (mod @round-number @food-density))
     (swap! food #(conj % (random-point grid-x grid-y)))))
 
 (defn- update-collisionmap
   []
   (reset! wormblocks #{})
-  (for-ai (fn [ai as cs head blocks exec]
-            (doseq [block @blocks]
-              (swap! wormblocks #(conj % block)))) true))
+  (for-ai ai-list (fn [ai as cs head blocks exec]
+                    (doseq [block (rest @blocks)]
+                      (swap! wormblocks #(conj % block)))) true))
 
 (defn- update-ai
   []
-  (for-ai (fn [ai as cs head blocks exec]
-            (let [on-grid-helper (fn [[x y]]
-                                   (on-grid? [x y] [grid-x grid-y]))
-                  move (exec {:size @as
-                              :head head
-                              :dimensions [grid-x grid-y]
-                              :blocks @blocks
-                              :food-density @food-density
-                              :round-number @round-number
-                              :nonpassable @nonpassable
-                              :food @food
-                              :wormblocks @wormblocks
-                              :look look})]
-              (if (contains? (set (keys directions)) move)
-                (let [newpos (vecoper head (move directions) +)]
-                  (when (>= cs @as)
-                    (swap! blocks butlast))
-                  (swap! blocks #(conj % newpos)))
-                (kill-ai ai)))))
-  (update-collisionmap)
-  (check-collisions))
+  (for-ai ai-list (fn [ai as cs head blocks exec]
+                    (let [on-grid-helper (fn [[x y]]
+                                           (on-grid? [x y] [grid-x grid-y]))
+                          move (exec {:size @as
+                                      :head head
+                                      :dimensions [grid-x grid-y]
+                                      :blocks @blocks
+                                      :food-density @food-density
+                                      :round-number @round-number
+                                      :nonpassable @nonpassable
+                                      :food @food
+                                      :wormblocks @wormblocks
+                                      :look (fn [[x y]]
+                                              (and (not (contains? @nonpassable [x y]))
+                                                   (not (contains? @wormblocks [x y]))
+                                                   (on-grid? [x y] [grid-x grid-y])))})]
+                      (if (contains? (set (keys directions)) move)
+                        (let [newpos (vecoper head (move directions) +)]
+                          (when (>= cs @as)
+                            (swap! blocks butlast))
+                          (swap! blocks #(conj % newpos)))
+                        (kill-ai ai))))))
 
 (defn- game-ended?
   "Checks if game has ended."
-  []
-  (every? #(false? @(:is-alive %)) (vals @ai-list)))
+  [ailist]
+  (every? #(false? @(:is-alive %)) (vals ailist)))
 
 (defn- game
   "Basic game-loop with drawing and updating."
   []
-  (when (not (game-ended?))
+  (when (not (game-ended? @ai-list))
     (swap! round-number inc)
     (update-food))
   (draw-game grid-x grid-y @ai-list @round-number @food)
-  (update-ai))
+  (update-ai)
+  (update-collisionmap)
+  (check-collisions))
 
 (defn -main
   []
